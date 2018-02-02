@@ -29,7 +29,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AckerApple/ack-pdfbox.git"
+    "url": "git+https://github.com/amglin/ack-pdfbox.git"
   },
   "keywords": [
     "pdfbox",
@@ -40,7 +40,7 @@
   "author": "Acker Apple",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/AckerApple/ack-pdfbox/issues"
+    "url": "https://github.com/amglin/ack-pdfbox/issues"
   },
-  "homepage": "https://github.com/AckerApple/ack-pdfbox#readme"
+  "homepage": "https://github.com/amglin/ack-pdfbox#readme"
 }
