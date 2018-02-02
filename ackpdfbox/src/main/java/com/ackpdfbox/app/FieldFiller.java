@@ -3,11 +3,12 @@ package com.ackpdfbox.app;
 import com.ackpdfbox.app.ImageAdder;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.charset.Charset;
-
-import java.io.IOException;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -20,14 +21,17 @@ import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.cos.COSName;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDResources;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
-import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 
+import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import org.apache.pdfbox.pdmodel.interactive.form.PDField;
 //import org.apache.pdfbox.pdmodel.interactive.form.PDComboBox;
 import org.apache.pdfbox.pdmodel.interactive.form.PDCheckBox;
 import org.apache.pdfbox.pdmodel.interactive.form.PDRadioButton;
 //import org.apache.pdfbox.pdmodel.interactive.form.PDRadioCollection;
+
+import org.apache.pdfbox.pdmodel.font.PDTrueTypeFont;
 
 public class FieldFiller{
   public String pdfPath;
@@ -58,15 +62,25 @@ public class FieldFiller{
     PDAcroForm acroForm = docCatalog.getAcroForm();
     acroForm.setXFA(null);//XFA must be turned off for Acrobat XI and other advanced PDF form readers
 
+    PDResources res = acroForm.getDefaultResources();
+    if (res == null)
+      res = new PDResources();
+
+    InputStream fontStream = getClass().getResourceAsStream("Arial.ttf");
+    PDTrueTypeFont font = PDTrueTypeFont.loadTTF(_pdfDocument, fontStream);
+
+    String fontName = res.addFont(font);
+    acroForm.setDefaultResources(res);
+
     for(JsonElement field : jarr){
       JsonObject fObject = field.getAsJsonObject();
-     
+
       String fullname = fObject.get("fullyQualifiedName").getAsString();
       JsonElement value = fObject.get("value");
       JsonElement remove = fObject.get("remove");
 
       //System.out.println(fullname+"="+value);
-      
+
       PDField pdField = acroForm.getField(fullname);
       Boolean isReadOnly = pdField.isReadOnly();
       if(isReadOnly==true){
@@ -95,11 +109,11 @@ public class FieldFiller{
         imageAdder.pdf = pdf;
         imageAdder.setImageByBase64String( base64String );
         imageAdder.setPageNumber( fObject.get("page").getAsInt() );
-        
+
         JsonObject cords = fObject.get("cords").getAsJsonObject();
         float x = Float.parseFloat( cords.get("x").getAsString() );
         float y = Float.parseFloat( cords.get("y").getAsString() );
-        
+
         JsonElement forceWidthHeight = base64Overlay.get("forceWidthHeight");
         if(forceWidthHeight!=null && forceWidthHeight.getAsBoolean()==true){
           float width = Float.parseFloat( cords.get("width").getAsString() );
@@ -131,14 +145,14 @@ public class FieldFiller{
     pdf.save(this.outPath);
     pdf.close();
   }
-  
+
   private void fillRadioButton(PDRadioButton pDCheckBox, JsonElement value) throws IOException{
     if(value==null){
       return;
     }
 
     String valueString = value.getAsString();
-    
+
     Boolean checkedByValue = false;
     java.util.Set<String> onValues = pDCheckBox.getOnValues();
     for(String checkValue : onValues){
@@ -152,7 +166,7 @@ public class FieldFiller{
     if(!checkedByValue){
       Boolean checkOff = valueString.toLowerCase().equals("off");
       Boolean checkOn = valueString.length()>0 && !checkOff;
-      
+
       if(checkOff){
         pDCheckBox.setValue("Off");
       }else if(checkOn){
@@ -167,7 +181,7 @@ public class FieldFiller{
     }
 
     String valueString = value.getAsString();
-    
+
     Boolean checkedByValue = false;
     java.util.Set<String> onValues = pDCheckBox.getOnValues();
     for(String checkValue : onValues){
@@ -180,7 +194,7 @@ public class FieldFiller{
     if(!checkedByValue){
       Boolean checkOff = valueString.toLowerCase().equals("off");
       Boolean checkOn = valueString.length()>0 && !checkOff;
-      
+
       if(checkOff){
         pDCheckBox.unCheck();
       }else if(checkOn){
